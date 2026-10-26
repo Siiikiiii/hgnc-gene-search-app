@@ -88,6 +88,71 @@ http://127.0.0.1:8000/
 
 ---
 
+# Running with Docker
+
+This is a Flask application. Docker lets you run it without installing
+Conda or Python dependencies.
+
+## Build the image from this repository
+
+From the root of the repository, build the image:
+
+```bash
+docker build -t gene-lookup-app:1.0.0 .
+```
+
+Run the container:
+
+```bash
+docker run --rm -p 8000:8000 gene-lookup-app:1.0.0
+```
+
+## OR Use the pre-built image from Docker Hub
+
+```bash
+docker run --rm -p 8000:8000 yins1/gene-lookup-app:1.0.0
+```
+
+Docker downloads the image automatically the first time.
+
+## Access the application
+
+The application runs on port 8000. Open in a web browser:
+
+http://localhost:8000
+or
+http://127.0.0.1:8000/
+
+
+## Stop the application
+
+Press `Ctrl+C` in the terminal running the container. Because of `--rm`,
+the stopped container is removed automatically.
+
+```test
+Clone repository
+    │
+    ▼
+Docker build
+    │
+    ▼
+Docker image
+    │
+    ▼
+Docker run
+    │
+    ▼
+Docker container
+    │
+    ▼
+  Flask 
+    │
+    ▼
+Web browser
+```
+
+---
+
 # Testing
 
 Run the complete unit and route test suite:
