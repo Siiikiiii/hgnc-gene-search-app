@@ -20,8 +20,6 @@ The application uses a locally stored copy of the complete HGNC dataset, which i
 
 https://www.genenames.org/download/archive/
 
-The downloaded TSV (tab-separated values) file should be saved as `hgnc_complete_set.txt` and placed in the `data/` directory at the root of the project. 
-
 The application loads this dataset upon startup, making it fast and efficient for querying gene records without needing an external API connection. The specific file loaded can be configured in:
 
 hgnc_app/settings.py
