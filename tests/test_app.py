@@ -8,9 +8,7 @@ from hgnc_app.app import app
 # ------------------------------------------------------------------
 # Fixtures
 # ------------------------------------------------------------------
-# Test-client fixture pattern adapted from the Flask testing docs:
-# https://flask.palletsprojects.com/en/stable/testing/
-#
+
 # These are end-to-end tests: importing hgnc_app.app builds the app with
 # the real HGNC dataset, so data/hgnc_complete_set.txt must be present and
 # the search tests exercise the same data users see.
