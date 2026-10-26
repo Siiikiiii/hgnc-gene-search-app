@@ -5,7 +5,6 @@
 # Guide, adapted for this application:
 #   https://github.com/pypa/sampleproject
 #   https://packaging.python.org/en/latest/guides/writing-pyproject-toml/
-[project]
 
 # Import name of the package (hgnc_app/). The app is installed locally with
 # pip install -e . rather than published to PyPI.
