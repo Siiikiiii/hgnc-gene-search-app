@@ -167,4 +167,4 @@ app: Flask = create_app()
 # -------------------------------------------------------------------
 if __name__ == "__main__":
     logging.getLogger(__name__).info("Running Flask app")
-    app.run()
+    app.run(host="0.0.0.0", port=8000)
