@@ -34,15 +34,28 @@ def read_file(filepath: str) -> List[Dict[str, Any]]:
 
     try:
         with open(filepath, mode='r', encoding='utf-8') as f:
+            # The HGNC complete set has ~50 columns and HGNC has added and
+            # reordered columns between releases. Reading by header name
+            # (DictReader) rather than by column position means only the
+            # columns this app uses need to stay the same.
             reader = csv.DictReader(f, delimiter='\t')
             for i, entry in enumerate(reader):
+                # One bad row should not stop ~45,000 genes from loading,
+                # so errors are logged and the row skipped. Rows that are
+                # merely incomplete are filtered out by parse_line
+                # returning None and are not logged.
                 try:
                     parsed = parse_line(entry)
                     if parsed:
                         output_list.append(parsed)
                 except Exception:
+                    # +2 converts the 0-based row index to a file line
+                    # number: +1 for 1-based numbering, +1 for the header.
                     logger.warning(f"Skipping malformed line {i+2}")
 
+        # A file that yields no genes is almost certainly the wrong file or
+        # format (e.g. comma- rather than tab-separated), so stop here
+        # rather than start an app that can never find anything.
         if not output_list:
             raise ValueError("No valid data parsed from file")
 
@@ -54,7 +67,7 @@ def read_file(filepath: str) -> List[Dict[str, Any]]:
         raise
 
 
-def parse_line(row: Dict[str, str]) -> Dict[str, Any]:
+def parse_line(row: Dict[str, str]) -> Optional[Dict[str, Any]]:
     """
     Parse a single row dictionary from the HGNC dataset.
     Returns None if critical data (like symbol or hgnc_id) is missing.
@@ -74,9 +87,15 @@ def parse_line(row: Dict[str, str]) -> Dict[str, Any]:
     ValueError
         If the line structure is invalid.
     """
+    # The approved symbol and HGNC ID are the only fields find_gene
+    # searches, so a row without them could never be returned to a user.
     if not row.get("hgnc_id") or not row.get("symbol"):
         return None
 
+    # Keep only the columns shown on the results page, renamed to the keys
+    # used by templates/index.html. Multi-value fields (previous symbols,
+    # previous names, aliases) are kept exactly as HGNC provides them,
+    # separated by "|", and displayed as-is.
     return {
         "hgnc_id": row.get("hgnc_id", ""),
         "gene_symbol": row.get("symbol", ""),
@@ -108,9 +127,21 @@ def find_gene(query: str, data: List[Dict[str, Any]]) -> Optional[Dict[str, Any]
     -----
     Search is case-insensitive and matches exact gene symbols or HGNC IDs.
     """
+    # HGNC symbols are mostly upper case but some contain lower case
+    # (e.g. C1orf21), and users often type IDs as "hgnc:1100", so both
+    # sides are upper-cased before comparing.
     clean_query = query.strip().upper()
     logger.debug(f"Searching for gene: {clean_query}")
 
+    # Design notes:
+    # - A linear scan of ~45,000 records takes about 10 ms, which is fine
+    #   for one search per request. If the dataset or traffic grew, a dict
+    #   keyed by symbol and ID could be built once in read_file instead.
+    # - Approved symbols and HGNC IDs are unique in the HGNC dataset and
+    #   never equal each other, so the first match is the only match.
+    # - Previous symbols and aliases are deliberately not searched: several
+    #   hundred of them are identical to another gene's approved symbol,
+    #   so matching on them could return the wrong gene.
     for entry in data:
         symbol = str(entry.get("gene_symbol", "")).strip().upper()
         hgnc_id = str(entry.get("hgnc_id", "")).strip().upper()

@@ -1,7 +1,15 @@
+"""
+Flask entry point for the HGNC gene search application.
+
+The application factory pattern used here is adapted from the Flask
+documentation:
+https://flask.palletsprojects.com/en/stable/patterns/appfactories/
+"""
+
 from flask import Flask, request, render_template
 from pathlib import Path
 import logging
-from typing import Dict, Any, Optional
+from typing import Dict, Any, List, Optional
 
 from hgnc_app import settings
 from hgnc_app.models import data_parser
@@ -24,7 +32,10 @@ def create_app() -> Flask:
         Configured Flask application instance.
     """
 
-    # Create Flask instance (NOT at import time anymore)
+    # Building the app inside a function keeps set-up (logging, data
+    # loading, route registration) in one place that runs when an app is
+    # requested, rather than as a side effect scattered across imports.
+    # Note that the module-level `app` below still calls this on import.
     app: Flask = Flask(__name__)
 
     # ---------------------------------------------------------------
@@ -35,19 +46,28 @@ def create_app() -> Flask:
     logger.info("Initialising Flask application via factory")
 
     # ---------------------------------------------------------------
-    # Load data (now happens ONCE when app is created)
+    # Load data
     # ---------------------------------------------------------------
+    # The HGNC complete set (~45,000 genes, ~17 MB) is parsed once at
+    # start-up rather than per request: re-reading the file for every
+    # search would take seconds, whereas searching the in-memory list
+    # takes milliseconds. The data is read-only, so sharing one copy
+    # between requests is safe.
     DATA_FILE = settings.DATA_FILE
 
     logger.info(f"Loading data from {DATA_FILE}")
 
     try:
-        # Store data inside app config to avoid global state
-        # ✅ This is important for testing and flexibility
+        # Keep the dataset on the app instance rather than in a module
+        # global, so the routes below always read the data that belongs
+        # to the app they are registered on.
         app.config["DATA"] = data_parser.read_file(DATA_FILE)
         logger.info("Data loaded successfully")
 
     except Exception:
+        # Fail fast: without the dataset the app cannot answer any query,
+        # so refusing to start is clearer than serving errors on every
+        # search.
         logger.exception("Failed to load data")
         raise
 
@@ -97,9 +117,9 @@ def create_app() -> Flask:
                 )
 
             # -------------------------------------------------------
-            # Retrieve data from app config (NOT global variable)
+            # Look up the gene in the dataset loaded at start-up
             # -------------------------------------------------------
-            data: Dict[str, Any] = app.config["DATA"]
+            data: List[Dict[str, Any]] = app.config["DATA"]
 
             selection: Optional[Dict[str, Any]] = data_parser.find_gene(query, data)
 
@@ -114,6 +134,9 @@ def create_app() -> Flask:
 
             return render_template("index.html", gene_data=selection)
 
+        # Last-resort handlers: show the user a message on the page
+        # instead of Flask's generic 500 error, and record the full
+        # traceback in the log for troubleshooting.
         except KeyError as e:
             logger.warning(f"Missing expected data field: {e}")
             return render_template(
@@ -131,8 +154,11 @@ def create_app() -> Flask:
     return app
 
 # -------------------------------------------------------------------
-# Application instance (for mounting to gunicorn or mod_wsgi)
+# Application instance
 # -------------------------------------------------------------------
+# WSGI servers (e.g. gunicorn hgnc_app.app:app) and the test suite import
+# a ready-made `app`, so one is created at import time. This means
+# importing this module loads the full HGNC dataset.
 app: Flask = create_app()
 
 

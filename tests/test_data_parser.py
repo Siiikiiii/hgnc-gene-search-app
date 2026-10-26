@@ -45,7 +45,8 @@ def test_parse_line_invalid_format() -> None:
 def test_read_file_happy(tmp_path: Path) -> None:
     """Test reading valid TSV file with headers and multiple entries."""
     file = tmp_path / "test.txt"
-    # Notice the \t (tabs) separating the columns instead of commas
+    # HGNC distributes the complete set as tab-separated values, so the
+    # fixture mirrors that format with the same column names.
     file.write_text(
         "hgnc_id\tsymbol\tname\tprev_symbol\tprev_name\talias_symbol\tmane_select\n"
         "HGNC:1\tGENE1\tName 1\t\t\t\t\n"

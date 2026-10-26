@@ -1,51 +1,52 @@
 # =========================
 # Project metadata (PEP 621)
 # =========================
+# Layout based on the PyPA sample project and the Python Packaging User
+# Guide, adapted for this application:
+#   https://github.com/pypa/sampleproject
+#   https://packaging.python.org/en/latest/guides/writing-pyproject-toml/
 [project]
 
-# The name of your package as it will appear on PyPI and in your installed packages
+# Import name of the package (hgnc_app/). The app is installed locally with
+# pip install -e . rather than published to PyPI.
 name = "hgnc_app"
 
-# Fields that are NOT defined here but loaded dynamically elsewhere
-# In this case, dependencies are read from requirements.txt, and the code to do the reading from reuirements.txt
-# is found below
+# Dependencies are read from requirements.txt (see [tool.setuptools.dynamic]
+# below) so the pinned versions live in a single file.
 dynamic = ["dependencies"]
 
-# Static version number (simple)
-# You manually update this as you release new versions
-# We can make versioning dynamic
+# Updated by hand; the app has no release process yet.
 version = "0.0.1"
 
-# Short description of what your package does
 description = "HGNC Gene Information Web Application"
 
-# License file included in the project
 license = {file = "LICENSE.txt"}
 
-# Authors of the package
 authors = [{name = "Siqi Yin", email = "siqi.yin@nhs.net"}]
 
-# README file used as the long description (e.g. on PyPI)
 readme = "README.md"
 
-# Keywords to help people find your package
 keywords = [
     "bioinformatics",
     "HGNC",
     "clinical genetics"
 ]
 
-# Minimum Python version required to run this package
-requires-python = ">=3.10"
+# Matches the interpreter pinned in environment.yml (python 3.12.8), which
+# is the only version the app and its pinned dependencies are tested on.
+requires-python = ">=3.12"
 
-# Classifiers help categorise your package on PyPI
-# These are mainly for discoverability and filtering
+# Describe the intended users (clinical scientists and researchers) and
+# the supported Python version, in line with requires-python above.
 classifiers = [
     "Development Status :: 3 - Alpha",
-    "Intended Audience :: Developers",
-    "Topic :: Software Development :: Build Tools",
-    # NOTE: This should ideally match requires-python
-    "Programming Language :: Python :: 3.10"
+    "Framework :: Flask",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Healthcare Industry",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.12"
 ]
 
 # =====================================
@@ -53,11 +54,9 @@ classifiers = [
 # =====================================
 [tool.setuptools.dynamic]
 
-# Instead of listing dependencies here,
-# they are read from requirements.txt
-# This avoids duplication and keeps things DRY
-# You can add a manual list of dependencies, but we will use requirements.txt to keep things easy to maintain
-# and much simpler to have complete and utter control over our environment using pip freeze
+# requirements.txt holds exact versions (generated with pip freeze), so a
+# fresh install reproduces the environment the app was tested in. Reading
+# it here avoids keeping a second dependency list in sync by hand.
 dependencies = {file = ["requirements.txt"]}
 
 # =====================================
@@ -65,11 +64,9 @@ dependencies = {file = ["requirements.txt"]}
 # =====================================
 [tool.setuptools.packages.find]
 
-# Where setuptools should look for Python packages
-# "." means the root directory
+# Search from the repository root, but only package hgnc_app and its
+# subpackages, so that tests/ and data/ are not installed as packages.
 where = ["."]
-
-# Only include packages that match this pattern
 include = ["hgnc_app*"]
 
 
@@ -104,10 +101,9 @@ hgnc_app = [
 # =====================================
 [build-system]
 
-# Build-time dependencies required to package your project
-# setuptools = build backend
-# wheel = allows building .whl files
-# setuptools_scm = only needed if using dynamic versioning
+# setuptools builds the package and wheel builds .whl files.
+# setuptools_scm is only needed for versions taken from git tags; it is not
+# used while the version above is set by hand.
 requires = ["setuptools>=45", "setuptools_scm[toml]>=6.2", "wheel"]
 
 # The tool used to build your package

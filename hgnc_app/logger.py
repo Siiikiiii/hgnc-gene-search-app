@@ -1,10 +1,11 @@
 # logger.py
 """
-This module sets up logging for the application using a dictionary-based configuration.
-It defines a function to apply the logging configuration, which should be called once at application startup.
-This ensures that logging is globally configured, allowing all modules to use logging.getLogger()
-and enabling hierarchical inheritance of loggers.
-The logging configuration is defined in the LOGGING_CONFIG dictionary, which specifies loggers, handlers, formatters, and other logging settings.
+Applies the logging configuration defined in settings.LOGGING_CONFIG.
+
+Configuration is applied by calling setup_logging() from create_app()
+rather than when this module is imported, so importing hgnc_app modules
+does not change logging set-up as a side effect; it happens only when an
+application is actually built.
 """
 
 import logging.config
@@ -19,12 +20,11 @@ def setup_logging():
     """
     Apply the logging configuration.
 
-    This should be called ONCE at application startup.
-
-    After this:
-    ✔ Logging is globally configured
-    ✔ All modules can use logging.getLogger()
-    ✔ Hierarchical inheritance works automatically
+    Call once at application start-up. Python's logging is process-wide,
+    so after this call every module can simply use
+    logging.getLogger(__name__): loggers named "hgnc_app.*" pick up the
+    "hgnc_app" settings and handlers, and all others fall back to the root
+    logger.
     """
 
     logging.config.dictConfig(LOGGING_CONFIG)
