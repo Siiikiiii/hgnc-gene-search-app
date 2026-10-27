@@ -6,3 +6,5 @@ htmlcov/
 .coverage
 *.egg-info/
 *.log
+.venv/
+coverage.xml
